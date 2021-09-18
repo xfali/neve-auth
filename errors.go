@@ -10,11 +10,12 @@ import (
 )
 
 var (
-	malformedTokenError = NewErr("malformed token")
-	decodeTokenError    = NewErr("decoding token failed: %v")
-	issuerVerifyError   = NewErr("issuer verify failed")
-	tokenVerifyError    = NewErr("oidc: token verify failed: %v")
-	parseClaimsError    = NewErr("oidc: parse claims failed: %v")
+	malformedTokenError         = NewErr("malformed token")
+	decodeTokenError            = NewErr("decoding token failed: %v")
+	issuerVerifyError           = NewErr("issuer verify failed")
+	tokenVerifyError            = NewErr("oidc: token verify failed: %v")
+	parseClaimsError            = NewErr("oidc: parse claims failed: %v")
+	indentingIdTokenClaimsError = NewErr("error indenting ID token claims: %v")
 )
 
 type Error struct {

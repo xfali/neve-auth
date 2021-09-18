@@ -6,18 +6,19 @@
 package neveauth
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"github.com/coreos/go-oidc/v3/oidc"
-	"github.com/dexidp/dex/storage"
 	"golang.org/x/oauth2"
 	"net/http"
 	"strings"
 )
 
 type defaultAuthenticator struct {
-	clientId       string
+	config         *oauth2.Config
 	issuerURL      string
 	provider       *oidc.Provider
 	verifier       *oidc.IDTokenVerifier
@@ -26,8 +27,9 @@ type defaultAuthenticator struct {
 	offlineAsScope bool
 }
 
-func CreateAuthenticator(client *http.Client, clientId string, issuerURL string) (*defaultAuthenticator, error) {
+func CreateAuthenticator(client *http.Client, config *oauth2.Config, issuerURL string) (*defaultAuthenticator, error) {
 	ret := &defaultAuthenticator{
+		config:    config,
 		client:    client,
 		issuerURL: issuerURL,
 	}
@@ -65,27 +67,32 @@ func CreateAuthenticator(client *http.Client, clientId string, issuerURL string)
 	}
 
 	ret.provider = provider
-	ret.verifier = provider.Verifier(&oidc.Config{ClientID: clientId})
+	ret.verifier = provider.Verifier(&oidc.Config{ClientID: config.ClientID})
 
 	return ret, nil
 }
 
-func (a *defaultAuthenticator) AuthenticateToken(ctx context.Context, token string) error {
-	err := a.VerifyIssuer(token)
-	if err != nil {
-		return err
-	}
-
+func (a *defaultAuthenticator) AuthenticateToken(ctx context.Context, token string) (*UserInfo, error) {
+	//err := a.VerifyIssuer(token)
+	//if err != nil {
+	//	return err
+	//}
 	idToken, err := a.verifier.Verify(ctx, token)
 	if err != nil {
-		return tokenVerifyError.V(err)
+		return nil, tokenVerifyError.V(err)
 	}
 
-	var c storage.Claims
-	if err := idToken.Claims(&c); err != nil {
-		return parseClaimsError.V(err)
+	var claims json.RawMessage
+	if err := idToken.Claims(&claims); err != nil {
+		return nil, parseClaimsError.V(err)
 	}
 
+	buff := new(bytes.Buffer)
+	if err := json.Indent(buff, []byte(claims), "", "  "); err != nil {
+		return nil, indentingIdTokenClaimsError.V(err)
+	}
+
+	return &UserInfo{}, nil
 }
 
 func (a *defaultAuthenticator) VerifyIssuer(token string) error {
@@ -100,13 +107,12 @@ func (a *defaultAuthenticator) VerifyIssuer(token string) error {
 }
 
 func (a *defaultAuthenticator) oauth2Config(scopes []string) *oauth2.Config {
-	return &oauth2.Config{
-		ClientID:     a.clientID,
-		ClientSecret: a.clientSecret,
-		Endpoint:     a.provider.Endpoint(),
-		Scopes:       scopes,
-		RedirectURL:  a.redirectURI,
+	if len(scopes) == 0 {
+		return a.config
 	}
+	ret := *a.config
+	ret.Scopes = scopes
+	return &ret
 }
 
 func parseIssuer(token string) (string, error) {
