@@ -17,10 +17,12 @@ type AuthRouter struct {
 
 	RedirectUrl string `fig:"neve.auth.web.router.redirect"`
 	CallbackUrl string `fig:"neve.auth.web.router.callback"`
+	UserInfoUrl string `fig:"neve.auth.web.router.userinfo"`
 
 	redirectHandler auth.RedirectHandler
 	callbackHandler auth.CallbackHandler
 	refreshHandler  auth.RefreshHandler
+	userInfoHandler auth.UserInfoHandler
 }
 
 func (r *AuthRouter) BeanAfterSet() error {
@@ -42,6 +44,7 @@ func (r *AuthRouter) HttpRoutes(engine gin.IRouter) {
 	engine.POST(r.RedirectUrl, r.redirect)
 	engine.GET(r.CallbackUrl, r.callback)
 	engine.POST(r.CallbackUrl, r.refresh)
+	engine.GET(r.UserInfoUrl, r.info)
 }
 
 func (r *AuthRouter) redirect(ctx *gin.Context) {
@@ -54,4 +57,8 @@ func (r *AuthRouter) callback(ctx *gin.Context) {
 
 func (r *AuthRouter) refresh(ctx *gin.Context) {
 	r.refreshHandler.Refresh(ctx)
+}
+
+func (r *AuthRouter) info(ctx *gin.Context) {
+	r.userInfoHandler.GetUserInfo(ctx)
 }

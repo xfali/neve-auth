@@ -28,6 +28,18 @@ type oidcLoginMgr struct {
 	config         *oauth2.Config
 	offlineAsScope bool
 	client         *http.Client
+
+	reader TokenReader
+	writer TokenWriter
+}
+
+func NewOidcLoginMgr() *oidcLoginMgr {
+	ret := &oidcLoginMgr{
+		logger: xlog.GetLogger(),
+		reader: NewTokenReader(),
+		writer: NewTokenWriter(),
+	}
+	return ret
 }
 
 func (m *oidcLoginMgr) Redirect(ctx *gin.Context) {
@@ -97,20 +109,24 @@ func (m *oidcLoginMgr) callback(ctx *gin.Context) {
 		return
 	}
 
-	tokenStr, err := m.tokenString(token)
+	destToken, err := m.convertToken(token)
+	if err != nil {
+		ctx.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	err = m.writer.WriteToken(ctx, destToken)
 	if err != nil {
 		ctx.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	ctx.SetCookie(cookieName, tokenStr, int(time.Until(token.Expiry).Seconds()), "/", "", false, true)
-
 	ctx.Redirect(http.StatusFound, state)
 }
 
 func (m *oidcLoginMgr) Refresh(ctx *gin.Context) {
-	t, err := m.parseToken(ctx)
+	t, err := m.reader.ReadToken(ctx)
 	if err != nil {
+		m.logger.Errorln(err)
 		ctx.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
@@ -131,13 +147,17 @@ func (m *oidcLoginMgr) Refresh(ctx *gin.Context) {
 		return
 	}
 
-	tokenStr, err := m.tokenString(token)
+	destToken, err := m.convertToken(token)
 	if err != nil {
 		ctx.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	ctx.SetCookie(cookieName, tokenStr, int(time.Until(token.Expiry).Seconds()), "/", "", false, true)
+	err = m.writer.WriteToken(ctx, destToken)
+	if err != nil {
+		ctx.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
 	ctx.Writer.WriteHeader(http.StatusCreated)
 }
 
@@ -150,49 +170,61 @@ func (m *oidcLoginMgr) oauth2Config(scopes []string) *oauth2.Config {
 	return &ret
 }
 
-func (m *oidcLoginMgr) tokenString(token *oauth2.Token) (string, error) {
+func (m *oidcLoginMgr) convertToken(token *oauth2.Token) (*Token, error) {
 	rawIDToken, ok := token.Extra("id_token").(string)
 	if !ok {
 		err := fmt.Errorf("no id_token in token response")
 		m.logger.Errorln(err)
-		return "", err
+		return nil, err
 	}
 
-	tokenData, err := json.Marshal(Token{
+	return &Token{
 		ID:      rawIDToken,
 		Refresh: token.RefreshToken,
 		Expire:  token.Expiry,
-	})
-	if err != nil {
-		m.logger.Errorln(err)
-		return "", err
-	}
-
-	return base64.StdEncoding.EncodeToString(tokenData), nil
+	}, nil
 }
 
-func (m *oidcLoginMgr) parseToken(ctx *gin.Context) (*Token, error) {
+type defaultTokenWriter struct{}
+
+func NewTokenWriter() *defaultTokenWriter {
+	return &defaultTokenWriter{}
+}
+
+func (m *defaultTokenWriter) WriteToken(ctx *gin.Context, token *Token) error {
+	tokenData, err := json.Marshal(Token)
+	if err != nil {
+		return err
+	}
+	tokenStr := base64.StdEncoding.EncodeToString(tokenData)
+	ctx.SetCookie(cookieName, tokenStr, int(time.Until(token.Expire).Seconds()), "/", "", false, true)
+	return nil
+}
+
+type defaultTokenReader struct{}
+
+func NewTokenReader() *defaultTokenReader {
+	return &defaultTokenReader{}
+}
+
+func (m *defaultTokenReader) ReadToken(ctx *gin.Context) (*Token, error) {
 	cookie, err := ctx.Cookie(cookieName)
 	if err != nil {
-		m.logger.Errorf("get cookie failed: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("get cookie failed: %v", err)
 	}
 
 	tokenData, err := base64.StdEncoding.DecodeString(cookie)
 	if err != nil {
-		m.logger.Errorf("decode token failed: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("decode token failed: %v", err)
 	}
 	var token Token
 	err = json.Unmarshal(tokenData, &token)
 	if err != nil {
-		m.logger.Errorf("decode token failed: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("decode token failed: %v", err)
 	}
 
 	if token.ID == "" || token.Expire.Before(time.Now()) {
 		err := fmt.Errorf("token invalid. id: %s time: %v", token.ID, token.Expire)
-		m.logger.Errorln(err)
 		return nil, err
 	}
 	return token, nil

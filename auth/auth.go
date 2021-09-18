@@ -7,6 +7,14 @@ package auth
 
 import "github.com/gin-gonic/gin"
 
+type TokenReader interface {
+	ReadToken(ctx *gin.Context) (*Token, error)
+}
+
+type TokenWriter interface {
+	WriteToken(ctx *gin.Context, token *Token) error
+}
+
 type RedirectHandler interface {
 	Redirect(ctx *gin.Context)
 }
@@ -17,4 +25,8 @@ type CallbackHandler interface {
 
 type RefreshHandler interface {
 	Refresh(ctx *gin.Context)
+}
+
+type UserInfoHandler interface {
+	GetUserInfo(ctx *gin.Context)
 }
