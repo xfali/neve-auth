@@ -3,7 +3,7 @@
 // @version V1.0
 // Description:
 
-package neveauth
+package user
 
 type UserInfo struct {
 	UserID   string

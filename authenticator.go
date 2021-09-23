@@ -13,6 +13,7 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	oidc2 "github.com/xfali/neve-auth/oidc"
 	"github.com/xfali/neve-auth/token"
+	"github.com/xfali/neve-auth/user"
 	"strings"
 )
 
@@ -31,7 +32,7 @@ func CreateAuthenticator(oidcCtx *oidc2.OidcContext) (*oidcAuthenticator, error)
 	return ret, nil
 }
 
-func (a *oidcAuthenticator) AuthenticateToken(ctx context.Context, token string) (*UserInfo, error) {
+func (a *oidcAuthenticator) AuthenticateToken(ctx context.Context, token string) (*user.UserInfo, error) {
 	//err := a.VerifyIssuer(token)
 	//if err != nil {
 	//	return err
