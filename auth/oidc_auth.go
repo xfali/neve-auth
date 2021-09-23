@@ -23,7 +23,7 @@ var (
 	cookieName = "neve-token"
 )
 
-type oidcLoginMgr struct {
+type OidcLoginMgr struct {
 	logger         xlog.Logger
 	config         *oauth2.Config
 	offlineAsScope bool
@@ -33,8 +33,8 @@ type oidcLoginMgr struct {
 	writer TokenWriter
 }
 
-func NewOidcLoginMgr() *oidcLoginMgr {
-	ret := &oidcLoginMgr{
+func NewOidcLoginMgr() *OidcLoginMgr {
+	ret := &OidcLoginMgr{
 		logger: xlog.GetLogger(),
 		reader: NewTokenReader(),
 		writer: NewTokenWriter(),
@@ -42,7 +42,7 @@ func NewOidcLoginMgr() *oidcLoginMgr {
 	return ret
 }
 
-func (m *oidcLoginMgr) Redirect(ctx *gin.Context) {
+func (m *OidcLoginMgr) Redirect(ctx *gin.Context) {
 	var scopes []string
 	if extraScopes := ctx.Query("extra_scopes"); extraScopes != "" {
 		scopes = strings.Split(extraScopes, " ")
@@ -76,7 +76,7 @@ func (m *oidcLoginMgr) Redirect(ctx *gin.Context) {
 	ctx.Redirect(http.StatusSeeOther, authCodeURL)
 }
 
-func (m *oidcLoginMgr) callback(ctx *gin.Context) {
+func (m *OidcLoginMgr) Callback(ctx *gin.Context) {
 	var (
 		state string
 		err   error
@@ -123,7 +123,7 @@ func (m *oidcLoginMgr) callback(ctx *gin.Context) {
 	ctx.Redirect(http.StatusFound, state)
 }
 
-func (m *oidcLoginMgr) Refresh(ctx *gin.Context) {
+func (m *OidcLoginMgr) Refresh(ctx *gin.Context) {
 	t, err := m.reader.ReadToken(ctx)
 	if err != nil {
 		m.logger.Errorln(err)
@@ -161,7 +161,11 @@ func (m *oidcLoginMgr) Refresh(ctx *gin.Context) {
 	ctx.Writer.WriteHeader(http.StatusCreated)
 }
 
-func (m *oidcLoginMgr) oauth2Config(scopes []string) *oauth2.Config {
+func (m *OidcLoginMgr) GetUserInfo(ctx *gin.Context) {
+
+}
+
+func (m *OidcLoginMgr) oauth2Config(scopes []string) *oauth2.Config {
 	if len(scopes) == 0 {
 		return m.config
 	}
@@ -170,7 +174,7 @@ func (m *oidcLoginMgr) oauth2Config(scopes []string) *oauth2.Config {
 	return &ret
 }
 
-func (m *oidcLoginMgr) convertToken(token *oauth2.Token) (*Token, error) {
+func (m *OidcLoginMgr) convertToken(token *oauth2.Token) (*Token, error) {
 	rawIDToken, ok := token.Extra("id_token").(string)
 	if !ok {
 		err := fmt.Errorf("no id_token in token response")

@@ -10,77 +10,37 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"github.com/coreos/go-oidc/v3/oidc"
-	"golang.org/x/oauth2"
-	"net/http"
+	oidc2 "github.com/xfali/neve-auth/oidc"
+	"github.com/xfali/neve-auth/token"
 	"strings"
 )
 
-type defaultAuthenticator struct {
-	config         *oauth2.Config
-	issuerURL      string
-	provider       *oidc.Provider
-	verifier       *oidc.IDTokenVerifier
-	scopes         []string
-	client         *http.Client
-	offlineAsScope bool
+type oidcAuthenticator struct {
+	oidcCtx  *oidc2.OidcContext
+	verifier token.Verifier
+	scopes   []string
 }
 
-func CreateAuthenticator(client *http.Client, config *oauth2.Config, issuerURL string) (*defaultAuthenticator, error) {
-	ret := &defaultAuthenticator{
-		config:    config,
-		client:    client,
-		issuerURL: issuerURL,
-	}
-	ctx := oidc.ClientContext(context.Background(), client)
-	provider, err := oidc.NewProvider(ctx, issuerURL)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query provider %q: %v", issuerURL, err)
+func CreateAuthenticator(oidcCtx *oidc2.OidcContext) (*oidcAuthenticator, error) {
+	ret := &oidcAuthenticator{
+		oidcCtx: oidcCtx,
 	}
 
-	var s struct {
-		// What scopes does a provider support?
-		//
-		// See: https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderMetadata
-		ScopesSupported []string `json:"scopes_supported"`
-	}
-	if err := provider.Claims(&s); err != nil {
-		return nil, fmt.Errorf("failed to parse provider scopes_supported: %v", err)
-	}
-
-	if len(s.ScopesSupported) == 0 {
-		// scopes_supported is a "RECOMMENDED" discovery claim, not a required
-		// one. If missing, assume that the provider follows the spec and has
-		// an "offline_access" scope.
-		ret.offlineAsScope = true
-	} else {
-		// See if scopes_supported has the "offline_access" scope.
-		ret.offlineAsScope = func() bool {
-			for _, scope := range s.ScopesSupported {
-				if scope == oidc.ScopeOfflineAccess {
-					return true
-				}
-			}
-			return false
-		}()
-	}
-
-	ret.provider = provider
-	ret.verifier = provider.Verifier(&oidc.Config{ClientID: config.ClientID})
-
+	ret.verifier = oidcCtx.GetVerifier(context.Background())
 	return ret, nil
 }
 
-func (a *defaultAuthenticator) AuthenticateToken(ctx context.Context, token string) (*UserInfo, error) {
+func (a *oidcAuthenticator) AuthenticateToken(ctx context.Context, token string) (*UserInfo, error) {
 	//err := a.VerifyIssuer(token)
 	//if err != nil {
 	//	return err
 	//}
-	idToken, err := a.verifier.Verify(ctx, token)
+	t, err := a.verifier.Verify(ctx, token)
 	if err != nil {
 		return nil, tokenVerifyError.V(err)
 	}
+	idToken := t.(*oidc.IDToken)
 
 	var claims json.RawMessage
 	if err := idToken.Claims(&claims); err != nil {
@@ -95,24 +55,15 @@ func (a *defaultAuthenticator) AuthenticateToken(ctx context.Context, token stri
 	return &UserInfo{}, nil
 }
 
-func (a *defaultAuthenticator) VerifyIssuer(token string) error {
+func (a *oidcAuthenticator) VerifyIssuer(token string) error {
 	issuer, err := parseIssuer(token)
 	if err != nil {
 		return err
 	}
-	if issuer != a.issuerURL {
+	if issuer != a.oidcCtx.IssuerURL {
 		return issuerVerifyError
 	}
 	return nil
-}
-
-func (a *defaultAuthenticator) oauth2Config(scopes []string) *oauth2.Config {
-	if len(scopes) == 0 {
-		return a.config
-	}
-	ret := *a.config
-	ret.Scopes = scopes
-	return &ret
 }
 
 func parseIssuer(token string) (string, error) {

@@ -15,14 +15,28 @@ import (
 type AuthRouter struct {
 	logger xlog.Logger
 
-	RedirectUrl string `fig:"neve.auth.web.router.redirect"`
-	CallbackUrl string `fig:"neve.auth.web.router.callback"`
-	UserInfoUrl string `fig:"neve.auth.web.router.userinfo"`
+	RedirectUrl string `fig:"neve.auth.router.redirect"`
+	CallbackUrl string `fig:"neve.auth.router.callback"`
+	UserInfoUrl string `fig:"neve.auth.router.userinfo"`
 
 	redirectHandler auth.RedirectHandler
 	callbackHandler auth.CallbackHandler
 	refreshHandler  auth.RefreshHandler
 	userInfoHandler auth.UserInfoHandler
+}
+
+func NewAuthRouter(
+	redirectHandler auth.RedirectHandler,
+	callbackHandler auth.CallbackHandler,
+	refreshHandler auth.RefreshHandler,
+	userInfoHandler auth.UserInfoHandler) *AuthRouter {
+	return &AuthRouter{
+		logger:          xlog.GetLogger(),
+		redirectHandler: redirectHandler,
+		callbackHandler: callbackHandler,
+		refreshHandler:  refreshHandler,
+		userInfoHandler: userInfoHandler,
+	}
 }
 
 func (r *AuthRouter) BeanAfterSet() error {

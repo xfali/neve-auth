@@ -6,8 +6,16 @@
 package neveauth
 
 import (
+	"fmt"
 	"github.com/xfali/fig"
+	"github.com/xfali/neve-auth/auth"
+	"github.com/xfali/neve-auth/oidc"
+	"github.com/xfali/neve-auth/router"
 	"github.com/xfali/neve-core/bean"
+)
+
+const (
+	issuerKey = "neve.auth.dex.issuer"
 )
 
 type dexOpts struct {
@@ -29,8 +37,16 @@ func NewDexProcessor(opts ...DexOpt) *dexProcessor {
 
 // 初始化对象处理器
 func (p *dexProcessor) Init(conf fig.Properties, container bean.Container) error {
-
-	return nil
+	issuer := conf.Get(issuerKey, "")
+	if issuer == "" {
+		return fmt.Errorf("issuer value is empty, set it: %s", issuerKey)
+	}
+	err := container.Register(oidc.NewOidcContext(nil, issuer))
+	if err != nil {
+		return err
+	}
+	oidcMgr := auth.NewOidcLoginMgr()
+	return container.Register(router.NewAuthRouter(oidcMgr, oidcMgr, oidcMgr, oidcMgr))
 }
 
 // 对象分类，判断对象是否实现某些接口，并进行相关归类。为了支持多协程处理，该方法应线程安全。

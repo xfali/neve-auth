@@ -1,0 +1,16 @@
+neve:
+  server:
+    port: 8080
+
+  auth:
+    router:
+      redirect: "/dex/redirect"
+      callback: "/dex/callback"
+      userinfo: "/dex/user"
+
+    dex:
+      issuer: "http://127.0.0.1:5556/dex"
+      issuerCA:
+      client:
+        id: "test"
+        secret: "sec@dex.test"
