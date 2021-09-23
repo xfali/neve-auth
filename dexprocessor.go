@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/xfali/fig"
 	"github.com/xfali/neve-auth/auth"
+	"github.com/xfali/neve-auth/config"
 	"github.com/xfali/neve-auth/oidc"
 	"github.com/xfali/neve-auth/router"
 	"github.com/xfali/neve-core/bean"
@@ -45,6 +46,12 @@ func (p *dexProcessor) Init(conf fig.Properties, container bean.Container) error
 	if err != nil {
 		return err
 	}
+
+	err = config.NewCasbinConfig().Init(conf, container)
+	if err != nil {
+		return err
+	}
+
 	oidcMgr := auth.NewOidcLoginMgr()
 	return container.Register(router.NewAuthRouter(oidcMgr, oidcMgr, oidcMgr, oidcMgr))
 }
