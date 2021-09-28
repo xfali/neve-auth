@@ -108,7 +108,7 @@ func getOAuthConfig(conf fig.Properties) (*oauth2.Config, error) {
 		return nil, fmt.Errorf("failed to query provider %q: %v", issuer, err)
 	}
 
-	url, err := redirectUrl(conf)
+	url, err := config.RedirectUrl(conf)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query redirect url %s: %v", url, err)
 	}
@@ -121,20 +121,3 @@ func getOAuthConfig(conf fig.Properties) (*oauth2.Config, error) {
 	}, nil
 }
 
-func redirectUrl(conf fig.Properties) (string, error) {
-	//port := conf.Get("neve.server.port", "")
-	//if port == "" {
-	//	return "", fmt.Errorf("server port is empty")
-	//}
-	url := conf.Get("neve.auth.router.callback", "")
-	if url == "" {
-		return "", fmt.Errorf("callback url is empty")
-	}
-	//return fmt.Sprintf("https://"), nil
-
-	addr := conf.Get("neve.auth.dex.externalAddr", "")
-	if addr == "" {
-		return "", fmt.Errorf("external address is empty")
-	}
-	return fmt.Sprintf("%s/%s", addr, url), nil
-}

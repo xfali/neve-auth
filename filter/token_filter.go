@@ -12,30 +12,32 @@ import (
 )
 
 type TokenParser interface {
-	ParseToken(ctx *gin.Context) (bool, error)
+	ParseToken(req *http.Request) (bool, error)
 }
 
 type TokenFilter struct {
 	logger xlog.Logger
 	parse  TokenParser
+	fail   FailHandler
 }
 
-func NewTokenFilter(parse TokenParser) *TokenFilter {
+func NewTokenFilter(parse TokenParser, fail FailHandler) *TokenFilter {
 	ret := &TokenFilter{
 		logger: xlog.GetLogger(),
 		parse:  parse,
+		fail:   fail,
 	}
 	return ret
 }
 
 func (f *TokenFilter) FilterHandler(ctx *gin.Context) {
-	auth, err := f.parse.ParseToken(ctx)
+	auth, err := f.parse.ParseToken(ctx.Request)
 	if err == nil {
 		if !auth {
 			ctx.Next()
-		} else {
 		}
 	} else {
-		ctx.AbortWithStatus(http.StatusUnauthorized)
+		f.fail.OnFailed(err, ctx.Writer, ctx.Request)
+		ctx.Abort()
 	}
 }

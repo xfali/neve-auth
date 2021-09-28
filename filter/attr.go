@@ -6,11 +6,11 @@
 package filter
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/xfali/neve-auth/authorizer"
+	"net/http"
 )
 
 type AttributeParser interface {
-	ParseAttribute(ctx *gin.Context) (authorizer.Attribute, bool, error)
+	ParseAttribute(req *http.Request) (authorizer.Attribute, bool, error)
 }
 

@@ -116,7 +116,7 @@ func (m *OidcLoginMgr) Callback(ctx *gin.Context) {
 		ctx.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	err = m.writer.WriteToken(ctx, destToken)
+	err = m.writer.WriteToken(ctx.Writer, destToken)
 	if err != nil {
 		ctx.AbortWithStatus(http.StatusInternalServerError)
 		return
@@ -126,7 +126,7 @@ func (m *OidcLoginMgr) Callback(ctx *gin.Context) {
 }
 
 func (m *OidcLoginMgr) Refresh(ctx *gin.Context) {
-	t, err := m.reader.ReadToken(ctx)
+	t, err := m.reader.ReadToken(ctx.Request)
 	if err != nil {
 		m.logger.Errorln(err)
 		ctx.AbortWithStatus(http.StatusInternalServerError)
@@ -155,7 +155,7 @@ func (m *OidcLoginMgr) Refresh(ctx *gin.Context) {
 		return
 	}
 
-	err = m.writer.WriteToken(ctx, destToken)
+	err = m.writer.WriteToken(ctx.Writer, destToken)
 	if err != nil {
 		ctx.AbortWithStatus(http.StatusInternalServerError)
 		return
@@ -197,13 +197,22 @@ func NewTokenWriter() *defaultTokenWriter {
 	return &defaultTokenWriter{}
 }
 
-func (m *defaultTokenWriter) WriteToken(ctx *gin.Context, token *Token) error {
+func (m *defaultTokenWriter) WriteToken(resp http.ResponseWriter, token *Token) error {
 	tokenData, err := json.Marshal(token)
 	if err != nil {
 		return err
 	}
 	tokenStr := base64.StdEncoding.EncodeToString(tokenData)
-	ctx.SetCookie(cookieName, tokenStr, int(time.Until(token.Expire).Seconds()), "/", "", false, true)
+	cookie := &http.Cookie{
+		Name:     cookieName,
+		Value:    tokenStr,
+		MaxAge:   int(time.Until(token.Expire).Seconds()),
+		Path:     "/",
+		Domain:   "",
+		Secure:   false,
+		HttpOnly: true,
+	}
+	http.SetCookie(resp, cookie)
 	return nil
 }
 
@@ -213,13 +222,13 @@ func NewTokenReader() *defaultTokenReader {
 	return &defaultTokenReader{}
 }
 
-func (m *defaultTokenReader) ReadToken(ctx *gin.Context) (*Token, error) {
-	cookie, err := ctx.Cookie(cookieName)
+func (m *defaultTokenReader) ReadToken(req *http.Request) (*Token, error) {
+	cookie, err := req.Cookie(cookieName)
 	if err != nil {
 		return nil, fmt.Errorf("get cookie failed: %v", err)
 	}
 
-	tokenData, err := base64.StdEncoding.DecodeString(cookie)
+	tokenData, err := base64.StdEncoding.DecodeString(cookie.Value)
 	if err != nil {
 		return nil, fmt.Errorf("decode token failed: %v", err)
 	}

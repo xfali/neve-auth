@@ -5,14 +5,17 @@
 
 package auth
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+	"net/http"
+)
 
 type TokenReader interface {
-	ReadToken(ctx *gin.Context) (*Token, error)
+	ReadToken(req *http.Request) (*Token, error)
 }
 
 type TokenWriter interface {
-	WriteToken(ctx *gin.Context, token *Token) error
+	WriteToken(resp http.ResponseWriter, token *Token) error
 }
 
 type RedirectHandler interface {

@@ -16,6 +16,10 @@ var (
 	TokenVerifyError            = NewErr("oidc: token verify failed: %v")
 	ParseClaimsError            = NewErr("oidc: parse claims failed: %v")
 	IndentingIdTokenClaimsError = NewErr("error indenting ID token claims: %v")
+
+	AttributeParserError = NewErr("parse attribute failed")
+
+	DenyError = NewErr("deny")
 )
 
 type Error struct {
