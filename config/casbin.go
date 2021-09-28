@@ -15,6 +15,7 @@ import (
 	"github.com/casbin/redis-adapter/v2"
 	"github.com/xfali/fig"
 	"github.com/xfali/neve-core/bean"
+	"strings"
 )
 
 const (
@@ -86,6 +87,10 @@ func selectAdapter(t, v string) (persist.Adapter, error) {
 		return gormadapter.NewAdapter("posgresql", v)
 	case "redis":
 		return redisadapter.NewAdapter("tcp", v), nil
+	default:
+		if len(t) > 3 && strings.ToLower(t[:3]) == "db:"{
+			return gormadapter.NewAdapter(t[3:], v)
+		}
 	}
 	return nil, nil
 }

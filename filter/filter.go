@@ -5,25 +5,42 @@
 
 package filter
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+	"github.com/xfali/neve-auth/authorizer"
+	"github.com/xfali/xlog"
+	"net/http"
+)
 
-type PathFilter interface {
-	ShouldFilter(path string) bool
+type AuthFilter struct {
+	logger     xlog.Logger
+	attrParser AttributeParser
+	authorizer authorizer.Authorizer
 }
 
-type OidcFilter struct {
-	pf PathFilter
-}
-
-func NewOidcFilter() *OidcFilter {
-	ret := &OidcFilter{}
+func NewAuthFilter(attrParser AttributeParser, authorizer authorizer.Authorizer) *AuthFilter {
+	ret := &AuthFilter{
+		logger:     xlog.GetLogger(),
+		attrParser: attrParser,
+		authorizer: authorizer,
+	}
 	return ret
 }
 
-func (f *OidcFilter) FilterHandler(ctx *gin.Context) {
-	if f.pf.ShouldFilter(ctx.Request.RequestURI) {
-
+func (f *AuthFilter) FilterHandler(ctx *gin.Context) {
+	attr, err := f.attrParser.ParseAttribute(ctx)
+	if err == nil {
+		if attr != nil {
+			ret := f.authorizer.Authorize(ctx.Request.Context(), attr)
+			if ret.Decision().IsDeny() {
+				ctx.AbortWithStatus(http.StatusUnauthorized)
+			} else {
+				ctx.Next()
+			}
+		} else {
+			ctx.AbortWithStatus(http.StatusUnauthorized)
+		}
 	} else {
-		ctx.Next()
+		ctx.AbortWithStatus(http.StatusBadRequest)
 	}
 }

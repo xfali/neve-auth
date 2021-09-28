@@ -48,6 +48,14 @@ func NoOpinion(errs ...error) *defaultResult {
 	}
 }
 
+func (d Decision) IsAllow() bool {
+	return d == DecisionAllow
+}
+
+func (d Decision) IsDeny() bool {
+	return d == DecisionDeny
+}
+
 func (r *defaultResult) Decision() Decision {
 	return r.d
 }

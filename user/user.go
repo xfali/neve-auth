@@ -6,8 +6,9 @@
 package user
 
 type UserInfo struct {
-	UserID   string
-	Username string
+	UserID    string
+	Username  string
+	ProjectID string
 
 	Groups []string
 	Extra  interface{}

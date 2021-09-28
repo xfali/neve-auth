@@ -8,9 +8,20 @@ package authorizer
 import "github.com/xfali/neve-auth/user"
 
 type defaultAttribute struct {
-	user *user.UserInfo
+	User     *user.UserInfo
+	Resource string
+	Action   string
+	Tenant   string
 }
 
-func (a *defaultAttribute) UserInfo() *user.UserInfo {
-	return a.user
+func (a *defaultAttribute) GetUserInfo() *user.UserInfo {
+	return a.User
+}
+
+func (a *defaultAttribute) GetAction() string {
+	return a.Action
+}
+
+func (a *defaultAttribute) GetResource() string {
+	return a.Resource
 }

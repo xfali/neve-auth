@@ -53,7 +53,7 @@ func (a *oidcAuthenticator) AuthenticateToken(ctx context.Context, token string)
 		return nil, indentingIdTokenClaimsError.V(err)
 	}
 
-	return &UserInfo{}, nil
+	return &user.UserInfo{}, nil
 }
 
 func (a *oidcAuthenticator) VerifyIssuer(token string) error {

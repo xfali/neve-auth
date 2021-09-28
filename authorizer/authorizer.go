@@ -11,7 +11,9 @@ import (
 )
 
 type Attribute interface {
-	UserInfo() *user.UserInfo
+	GetUserInfo() *user.UserInfo
+	GetAction() string
+	GetResource() string
 }
 
 type Authorizer interface {
