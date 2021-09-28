@@ -3,7 +3,7 @@
 // @version V1.0
 // Description:
 
-package neveauth
+package oidc
 
 import (
 	"bytes"
@@ -11,19 +11,19 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"github.com/coreos/go-oidc/v3/oidc"
-	oidc2 "github.com/xfali/neve-auth/oidc"
+	"github.com/xfali/neve-auth/errcode"
 	"github.com/xfali/neve-auth/token"
 	"github.com/xfali/neve-auth/user"
 	"strings"
 )
 
 type oidcAuthenticator struct {
-	oidcCtx  *oidc2.OidcContext
+	oidcCtx  *OidcContext
 	verifier token.Verifier
 	scopes   []string
 }
 
-func CreateAuthenticator(oidcCtx *oidc2.OidcContext) (*oidcAuthenticator, error) {
+func CreateAuthenticator(oidcCtx *OidcContext) (*oidcAuthenticator, error) {
 	ret := &oidcAuthenticator{
 		oidcCtx: oidcCtx,
 	}
@@ -39,18 +39,18 @@ func (a *oidcAuthenticator) AuthenticateToken(ctx context.Context, token string)
 	//}
 	t, err := a.verifier.Verify(ctx, token)
 	if err != nil {
-		return nil, tokenVerifyError.V(err)
+		return nil, errcode.TokenVerifyError.V(err)
 	}
 	idToken := t.(*oidc.IDToken)
 
 	var claims json.RawMessage
 	if err := idToken.Claims(&claims); err != nil {
-		return nil, parseClaimsError.V(err)
+		return nil, errcode.ParseClaimsError.V(err)
 	}
 
 	buff := new(bytes.Buffer)
 	if err := json.Indent(buff, []byte(claims), "", "  "); err != nil {
-		return nil, indentingIdTokenClaimsError.V(err)
+		return nil, errcode.IndentingIdTokenClaimsError.V(err)
 	}
 
 	return &user.UserInfo{}, nil
@@ -62,7 +62,7 @@ func (a *oidcAuthenticator) VerifyIssuer(token string) error {
 		return err
 	}
 	if issuer != a.oidcCtx.IssuerURL {
-		return issuerVerifyError
+		return errcode.IssuerVerifyError
 	}
 	return nil
 }
@@ -70,11 +70,11 @@ func (a *oidcAuthenticator) VerifyIssuer(token string) error {
 func parseIssuer(token string) (string, error) {
 	parts := strings.Split(token, ".")
 	if len(parts) != 3 {
-		return "", malformedTokenError
+		return "", errcode.MalformedTokenError
 	}
 	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
 	if err != nil {
-		return "", decodeTokenError.V(err)
+		return "", errcode.DecodeTokenError.V(err)
 	}
 	return string(payload), nil
 }

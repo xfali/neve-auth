@@ -6,17 +6,23 @@
 package neveauth
 
 import (
+	"context"
 	"fmt"
+	oidc2 "github.com/coreos/go-oidc/v3/oidc"
 	"github.com/xfali/fig"
 	"github.com/xfali/neve-auth/auth"
 	"github.com/xfali/neve-auth/config"
-	"github.com/xfali/neve-auth/oidc"
 	"github.com/xfali/neve-auth/router"
 	"github.com/xfali/neve-core/bean"
+	"golang.org/x/oauth2"
+	"net/http"
+	"time"
 )
 
 const (
-	issuerKey = "neve.auth.dex.issuer"
+	issuerKey       = "neve.auth.dex.issuer"
+	clientIdKey     = "neve.auth.dex.client.id"
+	clientSecretKey = "neve.auth.dex.client.secret"
 )
 
 type dexOpts struct {
@@ -38,21 +44,22 @@ func NewDexProcessor(opts ...DexOpt) *dexProcessor {
 
 // 初始化对象处理器
 func (p *dexProcessor) Init(conf fig.Properties, container bean.Container) error {
-	issuer := conf.Get(issuerKey, "")
-	if issuer == "" {
-		return fmt.Errorf("issuer value is empty, set it: %s", issuerKey)
-	}
-	err := container.Register(oidc.NewOidcContext(nil, issuer))
+	client := getClient(conf)
+	oauthConf, err := getOAuthConfig(conf)
 	if err != nil {
 		return err
 	}
+	//err := container.Register(oidc.NewOidcContext(client, issuer, oauthConf))
+	//if err != nil {
+	//	return err
+	//}
 
 	err = config.NewCasbinConfig().Init(conf, container)
 	if err != nil {
 		return err
 	}
 
-	oidcMgr := auth.NewOidcLoginMgr()
+	oidcMgr := auth.NewOidcLoginMgr(oauthConf, client)
 	return container.Register(router.NewAuthRouter(oidcMgr, oidcMgr, oidcMgr, oidcMgr))
 }
 
@@ -73,4 +80,61 @@ func (p *dexProcessor) Process() error {
 
 func (p *dexProcessor) BeanDestroy() error {
 	return nil
+}
+
+func getClient(conf fig.Properties) *http.Client {
+	return http.DefaultClient
+}
+
+func getOAuthConfig(conf fig.Properties) (*oauth2.Config, error) {
+	issuer := conf.Get(issuerKey, "")
+	if issuer == "" {
+		return nil, fmt.Errorf("issuer value is empty, set it: %s", issuerKey)
+	}
+
+	id := conf.Get(clientIdKey, "")
+	if id == "" {
+		return nil, fmt.Errorf("client id value is empty, set it: %s", clientIdKey)
+	}
+
+	secret := conf.Get(clientSecretKey, "")
+	if secret == "" {
+		return nil, fmt.Errorf("client secret value is empty, set it: %s", clientSecretKey)
+	}
+
+	ctx, _ := context.WithTimeout(context.TODO(), 30*time.Second)
+	provider, err := oidc2.NewProvider(ctx, issuer)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query provider %q: %v", issuer, err)
+	}
+
+	url, err := redirectUrl(conf)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query redirect url %s: %v", url, err)
+	}
+	return &oauth2.Config{
+		ClientID:     id,
+		ClientSecret: secret,
+		Endpoint:     provider.Endpoint(),
+		Scopes:       []string{oidc2.ScopeOpenID, oidc2.ScopeOfflineAccess, "profile", "email", "groups"},
+		RedirectURL:  url,
+	}, nil
+}
+
+func redirectUrl(conf fig.Properties) (string, error) {
+	//port := conf.Get("neve.server.port", "")
+	//if port == "" {
+	//	return "", fmt.Errorf("server port is empty")
+	//}
+	url := conf.Get("neve.auth.router.callback", "")
+	if url == "" {
+		return "", fmt.Errorf("callback url is empty")
+	}
+	//return fmt.Sprintf("https://"), nil
+
+	addr := conf.Get("neve.auth.dex.externalAddr", "")
+	if addr == "" {
+		return "", fmt.Errorf("external address is empty")
+	}
+	return fmt.Sprintf("%s/%s", addr, url), nil
 }

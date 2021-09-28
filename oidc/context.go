@@ -25,12 +25,13 @@ type OidcContext struct {
 	offlineAsScope bool
 }
 
-func NewOidcContext(client *http.Client, issuerURL string) *OidcContext {
+func NewOidcContext(client *http.Client, issuerURL string, config *oauth2.Config) *OidcContext {
 	if client == nil {
 		client = http.DefaultClient
 	}
 	ret := &OidcContext{
 		IssuerURL: issuerURL,
+		config:    config,
 		client:    client,
 	}
 
@@ -90,6 +91,10 @@ func (c *OidcContext) GetProviderConfig(ctx context.Context) error {
 		return err
 	}
 	return nil
+}
+
+func (c *OidcContext) GetProvider(ctx context.Context) *oidc.Provider {
+	return c.provider
 }
 
 func (c *OidcContext) GetVerifier(ctx context.Context) token.Verifier {

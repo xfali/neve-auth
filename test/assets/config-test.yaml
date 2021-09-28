@@ -11,6 +11,7 @@ neve:
     dex:
       issuer: "http://127.0.0.1:5556/dex"
       issuerCA:
+      externalAddr: "https://127.0.0.1:8080"
       client:
         id: "test"
         secret: "sec@dex.test"

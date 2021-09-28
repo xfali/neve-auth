@@ -33,11 +33,13 @@ type OidcLoginMgr struct {
 	writer TokenWriter
 }
 
-func NewOidcLoginMgr() *OidcLoginMgr {
+func NewOidcLoginMgr(config *oauth2.Config, client *http.Client) *OidcLoginMgr {
 	ret := &OidcLoginMgr{
 		logger: xlog.GetLogger(),
+		config: config,
 		reader: NewTokenReader(),
 		writer: NewTokenWriter(),
+		client: client,
 	}
 	return ret
 }
@@ -196,7 +198,7 @@ func NewTokenWriter() *defaultTokenWriter {
 }
 
 func (m *defaultTokenWriter) WriteToken(ctx *gin.Context, token *Token) error {
-	tokenData, err := json.Marshal(Token)
+	tokenData, err := json.Marshal(token)
 	if err != nil {
 		return err
 	}
@@ -231,5 +233,5 @@ func (m *defaultTokenReader) ReadToken(ctx *gin.Context) (*Token, error) {
 		err := fmt.Errorf("token invalid. id: %s time: %v", token.ID, token.Expire)
 		return nil, err
 	}
-	return token, nil
+	return &token, nil
 }

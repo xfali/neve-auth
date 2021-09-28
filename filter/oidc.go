@@ -10,7 +10,8 @@ import (
 	"github.com/xfali/neve-auth/authorizer"
 )
 
-type AttributeParser interface {
-	ParseAttribute(ctx *gin.Context) (authorizer.Attribute, bool, error)
-}
+type oidcAttributeParser struct{}
 
+func (p *oidcAttributeParser) ParseAttribute(ctx *gin.Context) (authorizer.Attribute, bool, error) {
+
+}
