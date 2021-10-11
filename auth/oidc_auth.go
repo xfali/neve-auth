@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/coreos/go-oidc/v3/oidc"
-	"github.com/gin-gonic/gin"
 	"github.com/xfali/xlog"
 	"golang.org/x/oauth2"
 	"net/http"
@@ -44,41 +43,41 @@ func NewOidcLoginMgr(config *oauth2.Config, client *http.Client) *OidcLoginMgr {
 	return ret
 }
 
-func (m *OidcLoginMgr) Redirect(ctx *gin.Context) {
+func (m *OidcLoginMgr) Redirect(w http.ResponseWriter, r *http.Request) {
 	var scopes []string
-	if extraScopes := ctx.Query("extra_scopes"); extraScopes != "" {
+	if extraScopes := r.FormValue("extra_scopes"); extraScopes != "" {
 		scopes = strings.Split(extraScopes, " ")
 	}
 	var clients []string
-	if crossClients := ctx.Query("cross_client"); crossClients != "" {
+	if crossClients := r.FormValue("cross_client"); crossClients != "" {
 		clients = strings.Split(crossClients, " ")
 	}
 	for _, client := range clients {
 		scopes = append(scopes, "audience:server:client_id:"+client)
 	}
 	connectorID := ""
-	if id := ctx.Query("connector_id"); id != "" {
+	if id := r.FormValue("connector_id"); id != "" {
 		connectorID = id
 	}
 
 	authCodeURL := ""
 	scopes = append(scopes, "openid", "profile", "email")
-	if ctx.Query("offline_access") != "yes" {
-		authCodeURL = m.oauth2Config(scopes).AuthCodeURL(ctx.Request.URL.String())
+	if r.FormValue("offline_access") != "yes" {
+		authCodeURL = m.oauth2Config(scopes).AuthCodeURL(r.URL.String())
 	} else if m.offlineAsScope {
 		scopes = append(scopes, "offline_access")
-		authCodeURL = m.oauth2Config(scopes).AuthCodeURL(ctx.Request.URL.String())
+		authCodeURL = m.oauth2Config(scopes).AuthCodeURL(r.URL.String())
 	} else {
-		authCodeURL = m.oauth2Config(scopes).AuthCodeURL(ctx.Request.URL.String(), oauth2.AccessTypeOffline)
+		authCodeURL = m.oauth2Config(scopes).AuthCodeURL(r.URL.String(), oauth2.AccessTypeOffline)
 	}
 	if connectorID != "" {
 		authCodeURL = authCodeURL + "&connector_id=" + connectorID
 	}
 
-	ctx.Redirect(http.StatusSeeOther, authCodeURL)
+	http.Redirect(w, r, authCodeURL, http.StatusSeeOther)
 }
 
-func (m *OidcLoginMgr) Callback(ctx *gin.Context) {
+func (m *OidcLoginMgr) Callback(w http.ResponseWriter, r *http.Request) {
 	var (
 		state string
 		err   error
@@ -86,20 +85,20 @@ func (m *OidcLoginMgr) Callback(ctx *gin.Context) {
 	)
 
 	// Authorization redirect callback from OAuth2 auth flow.
-	if errMsg := ctx.Query("error"); errMsg != "" {
-		m.logger.Errorln(errMsg + ": " + ctx.Query("error_description"))
-		ctx.AbortWithStatus(http.StatusBadRequest)
+	if errMsg := r.FormValue("error"); errMsg != "" {
+		m.logger.Errorln(errMsg + ": " + r.FormValue("error_description"))
+		http.Error(w, errMsg+": "+r.FormValue("error_description"), http.StatusBadRequest)
 		return
 	}
-	code := ctx.Query("code")
+	code :=  r.FormValue("code")
 	if code == "" {
-		m.logger.Errorf("no code in request: %q", ctx.Request.RequestURI)
-		ctx.AbortWithStatus(http.StatusBadRequest)
+		m.logger.Errorf("no code in request: %q", r.RequestURI)
+		http.Error(w, fmt.Sprintf("no code in request: %q", r.Form), http.StatusBadRequest)
 		return
 	}
-	if state = ctx.Query("state"); state == "" {
-		m.logger.Errorf("no state in request: %q", ctx.Request.RequestURI)
-		ctx.AbortWithStatus(http.StatusBadRequest)
+	if state =  r.FormValue("state"); state == "" {
+		m.logger.Errorf("no state in request: %q", r.RequestURI)
+		http.Error(w, fmt.Sprintf("expected state %q", r.RequestURI), http.StatusBadRequest)
 		return
 	}
 
@@ -107,35 +106,35 @@ func (m *OidcLoginMgr) Callback(ctx *gin.Context) {
 	token, err = m.oauth2Config(nil).Exchange(cctx, code)
 	if err != nil {
 		m.logger.Errorf("failed to get token: %v", err)
-		ctx.AbortWithStatus(http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("failed to get token: %v", err), http.StatusInternalServerError)
 		return
 	}
 
 	destToken, err := m.convertToken(token)
 	if err != nil {
-		ctx.AbortWithStatus(http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("failed to convert token: %v", err), http.StatusInternalServerError)
 		return
 	}
-	err = m.writer.WriteToken(ctx.Writer, destToken)
+	err = m.writer.WriteToken(w, destToken)
 	if err != nil {
-		ctx.AbortWithStatus(http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("failed to response write token: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	ctx.Redirect(http.StatusFound, state)
+	http.Redirect(w, r, state, http.StatusFound)
 }
 
-func (m *OidcLoginMgr) Refresh(ctx *gin.Context) {
-	t, err := m.reader.ReadToken(ctx.Request)
+func (m *OidcLoginMgr) Refresh(w http.ResponseWriter, r *http.Request) {
+	t, err := m.reader.ReadToken(r)
 	if err != nil {
 		m.logger.Errorln(err)
-		ctx.AbortWithStatus(http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("no refresh_token in request: %v", err), http.StatusBadRequest)
 		return
 	}
 
 	if t.Refresh == "" {
 		m.logger.Errorln("refresh token is empty")
-		ctx.AbortWithStatus(http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("no refresh_token in request"), http.StatusBadRequest)
 		return
 	}
 
@@ -145,25 +144,25 @@ func (m *OidcLoginMgr) Refresh(ctx *gin.Context) {
 	}).Token()
 	if err != nil {
 		m.logger.Errorf("failed to get token: %v", err)
-		ctx.AbortWithStatus(http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("failed to get token: %v", err), http.StatusInternalServerError)
 		return
 	}
 
 	destToken, err := m.convertToken(token)
 	if err != nil {
-		ctx.AbortWithStatus(http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("failed to convert token: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	err = m.writer.WriteToken(ctx.Writer, destToken)
+	err = m.writer.WriteToken(w, destToken)
 	if err != nil {
-		ctx.AbortWithStatus(http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("failed to response write token: %v", err), http.StatusInternalServerError)
 		return
 	}
-	ctx.Writer.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusCreated)
 }
 
-func (m *OidcLoginMgr) GetUserInfo(ctx *gin.Context) {
+func (m *OidcLoginMgr) GetUserInfo(w http.ResponseWriter, r *http.Request) {
 
 }
 

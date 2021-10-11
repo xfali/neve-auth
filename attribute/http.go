@@ -12,11 +12,13 @@ import (
 	"github.com/xfali/neve-auth/user"
 	"net/http"
 )
+
 type userKey struct{}
+
 var reqUserKey userKey
 
-func WithUser(req *http.Request, userInfo *user.UserInfo) {
-	req.WithContext(context.WithValue(req.Context(), reqUserKey, userInfo))
+func WithUser(req *http.Request, userInfo *user.UserInfo) *http.Request {
+	return req.WithContext(context.WithValue(req.Context(), reqUserKey, userInfo))
 }
 
 func GetUser(req *http.Request) (*user.UserInfo, bool) {

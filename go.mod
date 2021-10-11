@@ -12,6 +12,7 @@ require (
 	github.com/xfali/neve-core v0.2.5
 	github.com/xfali/neve-utils v0.0.1 // indirect
 	github.com/xfali/neve-web v0.0.8 // indirect
+	github.com/xfali/router v0.0.0-20210908151638-6659b9d38bd4 // indirect
 	github.com/xfali/xlog v0.1.5
 	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f
 )

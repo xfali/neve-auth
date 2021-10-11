@@ -6,53 +6,44 @@
 package filter
 
 import (
-	"github.com/xfali/fig"
 	"github.com/xfali/neve-auth/attribute"
 	"github.com/xfali/neve-auth/auth"
-	"github.com/xfali/neve-auth/constants"
 	"github.com/xfali/xlog"
 	"net/http"
 )
 
 type defaultHandler struct {
-	logger        xlog.Logger
-	reader        auth.TokenReader
-	authenticator Authenticator
-	redirectUrl   string
+	logger          xlog.Logger
+	matcher         PathMatcher
+	reader          auth.TokenReader
+	redirectHandler auth.RedirectHandler
 }
 
-func NewDefaultHandler(conf fig.Properties, reader auth.TokenReader, authenticator Authenticator) *defaultHandler {
+func NewDefaultHandler(matcher PathMatcher, redirectHandler auth.RedirectHandler, reader auth.TokenReader) *defaultHandler {
 	ret := &defaultHandler{
-		logger:        xlog.GetLogger(),
-		reader:        reader,
-		authenticator: authenticator,
+		logger:          xlog.GetLogger(),
+		matcher:         matcher,
+		reader:          reader,
+		redirectHandler: redirectHandler,
 	}
-	u, err := constants.RedirectUrl(conf)
-	if err != nil {
-		ret.logger.Errorln(err)
-		return nil
-	}
-	ret.redirectUrl = u
 
 	return ret
 }
 
-func (h *defaultHandler) ParseToken(req *http.Request) (bool, error) {
+func (h *defaultHandler) ParseToken(req *http.Request) (string, bool, error) {
+	// ignore
+	if !h.matcher.Match(req.RequestURI) {
+		return "", false, nil
+	}
 	token, err := h.reader.ReadToken(req)
 	if err != nil {
-		return false, err
+		return "", false, err
 	}
-	user, err := h.authenticator.AuthenticateToken(req.Context(), token.ID)
-	if err != nil {
-		return false, err
-	}
-
-	attribute.WithUser(req, user)
-	return true, nil
+	return token.ID, true, nil
 }
 
 func (h *defaultHandler) OnFailed(err error, resp http.ResponseWriter, req *http.Request) {
-	http.Redirect(resp, req, h.redirectUrl, http.StatusSeeOther)
+	h.redirectHandler.Redirect(resp, req)
 }
 
 func (h *defaultHandler) ParseAttribute(req *http.Request) (attribute.Attribute, bool, error) {

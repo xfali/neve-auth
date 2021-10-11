@@ -30,6 +30,10 @@ func NewAuthorizeFilter(attrParser AttributeParser, authorizer authorizer.Author
 }
 
 func (f *AuthorizeFilter) FilterHandler(ctx *gin.Context) {
+	if isIgnoreAuth(ctx) {
+		ctx.Next()
+		return
+	}
 	attr, auth, err := f.attrParser.ParseAttribute(ctx.Request)
 	if err == nil {
 		if !auth {

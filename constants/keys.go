@@ -12,7 +12,12 @@ const (
 	ClientSecretKey = "neve.auth.authenticator.spec.client.secret"
 	ExternalAddrKey = "neve.auth.authenticator.spec.externalAddr"
 
-	RouterCallbackKey = "neve.auth.router.callback"
+	RouterRedirectKey = "neve.auth.authenticator.spec.router.redirect"
+	RouterUserInfoKey = "neve.auth.authenticator.spec.router.userinfo"
+	RouterCallbackKey = "neve.auth.authenticator.spec.router.callback"
+
+	IncludesKey = "neve.auth.includes"
+	ExcludesKey = "neve.auth.excludes"
 )
 
 const (

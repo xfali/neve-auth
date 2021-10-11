@@ -186,6 +186,8 @@ github.com/xfali/neve-utils v0.0.1 h1:S+NfOFYeqILzCylAvd9OI00JqXW1meNPScb9JIDZBa
 github.com/xfali/neve-utils v0.0.1/go.mod h1:qwnnleG/95zSAnGPi0zWk+eeeP0bUUckkqFKa3YWvMU=
 github.com/xfali/neve-web v0.0.8 h1:8dxXjFvqRlMmSXw7cSGUoZtxY7LN+OalQen8o46fyEI=
 github.com/xfali/neve-web v0.0.8/go.mod h1:1AZmlbKcf2I18DXUQdwBUGUSbPTr61ZFz0Nl28ggdKk=
+github.com/xfali/router v0.0.0-20210908151638-6659b9d38bd4 h1:1Oj/fjlk4CVjgy2DZqstcUXLKwHfOBgk8y0huqpOxrU=
+github.com/xfali/router v0.0.0-20210908151638-6659b9d38bd4/go.mod h1:jw4eNBR6f4ALerUb/wM5HkLByZo+80ksDESIQTsLRes=
 github.com/xfali/xlog v0.1.1/go.mod h1:W9nEm+z16pEh1HAOW9m/GuVk1h9FE29jv1byivczWcw=
 github.com/xfali/xlog v0.1.5 h1:32pFwECB/sYUUhqgQ4q2IChgIz8IXlO0HU5/KMli5Ys=
 github.com/xfali/xlog v0.1.5/go.mod h1:W9nEm+z16pEh1HAOW9m/GuVk1h9FE29jv1byivczWcw=

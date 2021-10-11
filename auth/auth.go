@@ -6,7 +6,6 @@
 package auth
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
@@ -19,17 +18,17 @@ type TokenWriter interface {
 }
 
 type RedirectHandler interface {
-	Redirect(ctx *gin.Context)
+	Redirect(resp http.ResponseWriter, req *http.Request)
 }
 
 type CallbackHandler interface {
-	Callback(ctx *gin.Context)
+	Callback(resp http.ResponseWriter, req *http.Request)
 }
 
 type RefreshHandler interface {
-	Refresh(ctx *gin.Context)
+	Refresh(resp http.ResponseWriter, req *http.Request)
 }
 
 type UserInfoHandler interface {
-	GetUserInfo(ctx *gin.Context)
+	GetUserInfo(resp http.ResponseWriter, req *http.Request)
 }

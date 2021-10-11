@@ -20,10 +20,18 @@ func RedirectUrl(conf fig.Properties) (string, error) {
 		return "", fmt.Errorf("callback url is empty")
 	}
 	//return fmt.Sprintf("https://"), nil
+	if url[0] == '/' {
+		url = url[1:]
+	}
 
 	addr := conf.Get(ExternalAddrKey, "")
 	if addr == "" {
 		return "", fmt.Errorf("external address is empty")
 	}
+	if addr[len(addr)-1] == '/' {
+		addr = addr[:len(addr)-1]
+	}
+
+
 	return fmt.Sprintf("%s/%s", addr, url), nil
 }

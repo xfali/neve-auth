@@ -3,17 +3,20 @@ neve:
     port: 8080
 
   auth:
-    router:
-      redirect: "/dex/redirect"
-      callback: "/dex/callback"
-      userinfo: "/dex/user"
-
+    includes:
+      - "/test"
+    excludes:
+      - "/test2"
     authenticator:
       type: dex
       spec:
+        router:
+          redirect: "/dex/redirect"
+          callback: "/dex/callback"
+          userinfo: "/dex/user"
         issuer: "http://127.0.0.1:5556/dex"
         issuerCA:
-        externalAddr: "https://127.0.0.1:8080"
+        externalAddr: "http://127.0.0.1:8080"
         client:
           id: "test"
           secret: "sec@dex.test"

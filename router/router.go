@@ -15,9 +15,9 @@ import (
 type AuthRouter struct {
 	logger xlog.Logger
 
-	RedirectUrl string `fig:"neve.auth.router.redirect"`
-	CallbackUrl string `fig:"neve.auth.router.callback"`
-	UserInfoUrl string `fig:"neve.auth.router.userinfo"`
+	RedirectUrl string `fig:"neve.auth.authenticator.spec.router.redirect"`
+	CallbackUrl string `fig:"neve.auth.authenticator.spec.router.callback"`
+	UserInfoUrl string `fig:"neve.auth.authenticator.spec.router.userinfo"`
 
 	redirectHandler auth.RedirectHandler
 	callbackHandler auth.CallbackHandler
@@ -62,17 +62,17 @@ func (r *AuthRouter) HttpRoutes(engine gin.IRouter) {
 }
 
 func (r *AuthRouter) redirect(ctx *gin.Context) {
-	r.redirectHandler.Redirect(ctx)
+	r.redirectHandler.Redirect(ctx.Writer, ctx.Request)
 }
 
 func (r *AuthRouter) callback(ctx *gin.Context) {
-	r.callbackHandler.Callback(ctx)
+	r.callbackHandler.Callback(ctx.Writer, ctx.Request)
 }
 
 func (r *AuthRouter) refresh(ctx *gin.Context) {
-	r.refreshHandler.Refresh(ctx)
+	r.refreshHandler.Refresh(ctx.Writer, ctx.Request)
 }
 
 func (r *AuthRouter) info(ctx *gin.Context) {
-	r.userInfoHandler.GetUserInfo(ctx)
+	r.userInfoHandler.GetUserInfo(ctx.Writer, ctx.Request)
 }

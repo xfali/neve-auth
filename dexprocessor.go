@@ -62,12 +62,11 @@ func (p *dexProcessor) Init(conf fig.Properties, container bean.Container) error
 		return err
 	}
 
-	err = config.NewFilterConfig().Init(ctx, enforcer, conf, container)
+	oidcMgr := auth.NewOidcLoginMgr(oauthConf, client)
+	err = config.NewFilterConfig().Init(ctx, oidcMgr, enforcer, conf, container)
 	if err != nil {
 		return err
 	}
-
-	oidcMgr := auth.NewOidcLoginMgr(oauthConf, client)
 	return container.Register(router.NewAuthRouter(oidcMgr, oidcMgr, oidcMgr, oidcMgr))
 }
 
