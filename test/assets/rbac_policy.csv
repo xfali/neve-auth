@@ -1,0 +1,7 @@
+p,admin,userinfo, read
+p,admin,userinfo, write
+p,org,userinfo, read
+p,user,userinfo, none
+g,admin,admin,
+g,org,org,
+g,user,user,

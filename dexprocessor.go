@@ -52,6 +52,11 @@ func (p *dexProcessor) Init(conf fig.Properties, container bean.Container) error
 	}
 
 	ctx := oidc.NewOidcContext(client, issuer, oauthConf)
+	err = ctx.Init()
+	if err != nil {
+		return err
+	}
+
 	enforcer, err := config.NewCasbinConfig().Init(conf, container)
 	if err != nil {
 		return err

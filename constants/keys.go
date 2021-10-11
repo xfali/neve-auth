@@ -6,10 +6,11 @@
 package constants
 
 const (
-	IssuerKey       = "neve.auth.spec.issuer"
-	ClientIdKey     = "neve.auth.spec.client.id"
-	ClientSecretKey = "neve.auth.spec.client.secret"
-	ExternalAddrKey = "neve.auth.spec.externalAddr"
+	IssuerKey       = "neve.auth.authenticator.spec.issuer"
+	IssuerCAKey     = "neve.auth.authenticator.spec.issuerCA"
+	ClientIdKey     = "neve.auth.authenticator.spec.client.id"
+	ClientSecretKey = "neve.auth.authenticator.spec.client.secret"
+	ExternalAddrKey = "neve.auth.authenticator.spec.externalAddr"
 
 	RouterCallbackKey = "neve.auth.router.callback"
 )

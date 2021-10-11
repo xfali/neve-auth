@@ -74,7 +74,7 @@ func (c *CasbinConfig) Init(conf fig.Properties, container bean.Container) (*cas
 		return nil, err
 	}
 
-	return enforcer, nil
+	return enforcer, enforcer.LoadPolicy()
 }
 
 func selectAdapter(t, v string) (persist.Adapter, error) {
