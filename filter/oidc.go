@@ -5,13 +5,8 @@
 
 package filter
 
-import (
-	"github.com/gin-gonic/gin"
-	"github.com/xfali/neve-auth/authorizer"
-)
-
 type oidcAttributeParser struct{}
 
-func (p *oidcAttributeParser) ParseAttribute(ctx *gin.Context) (authorizer.Attribute, bool, error) {
-
-}
+//func (p *oidcAttributeParser) ParseAttribute(ctx *gin.Context) (authorizer.Attribute, bool, error) {
+//
+//}

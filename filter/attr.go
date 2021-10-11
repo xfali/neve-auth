@@ -6,11 +6,11 @@
 package filter
 
 import (
-	"github.com/xfali/neve-auth/authorizer"
+	"github.com/xfali/neve-auth/attribute"
 	"net/http"
 )
 
 type AttributeParser interface {
-	ParseAttribute(req *http.Request) (authorizer.Attribute, bool, error)
+	ParseAttribute(req *http.Request) (attribute.Attribute, bool, error)
 }
 

@@ -12,17 +12,13 @@ import (
 	"github.com/xfali/fig"
 	"github.com/xfali/neve-auth/auth"
 	"github.com/xfali/neve-auth/config"
+	"github.com/xfali/neve-auth/constants"
+	"github.com/xfali/neve-auth/oidc"
 	"github.com/xfali/neve-auth/router"
 	"github.com/xfali/neve-core/bean"
 	"golang.org/x/oauth2"
 	"net/http"
 	"time"
-)
-
-const (
-	issuerKey       = "neve.auth.dex.issuer"
-	clientIdKey     = "neve.auth.dex.client.id"
-	clientSecretKey = "neve.auth.dex.client.secret"
 )
 
 type dexOpts struct {
@@ -45,16 +41,23 @@ func NewDexProcessor(opts ...DexOpt) *dexProcessor {
 // 初始化对象处理器
 func (p *dexProcessor) Init(conf fig.Properties, container bean.Container) error {
 	client := getClient(conf)
+	issuer := conf.Get(constants.IssuerKey, "")
+	if issuer == "" {
+		return fmt.Errorf("issuer value is empty, set it: %s", constants.IssuerKey)
+	}
+
 	oauthConf, err := getOAuthConfig(conf)
 	if err != nil {
 		return err
 	}
-	//err := container.Register(oidc.NewOidcContext(client, issuer, oauthConf))
-	//if err != nil {
-	//	return err
-	//}
 
-	err = config.NewCasbinConfig().Init(conf, container)
+	ctx := oidc.NewOidcContext(client, issuer, oauthConf)
+	enforcer, err := config.NewCasbinConfig().Init(conf, container)
+	if err != nil {
+		return err
+	}
+
+	err = config.NewFilterConfig().Init(ctx, enforcer, conf, container)
 	if err != nil {
 		return err
 	}
@@ -87,19 +90,19 @@ func getClient(conf fig.Properties) *http.Client {
 }
 
 func getOAuthConfig(conf fig.Properties) (*oauth2.Config, error) {
-	issuer := conf.Get(issuerKey, "")
+	issuer := conf.Get(constants.IssuerKey, "")
 	if issuer == "" {
-		return nil, fmt.Errorf("issuer value is empty, set it: %s", issuerKey)
+		return nil, fmt.Errorf("issuer value is empty, set it: %s", constants.IssuerKey)
 	}
 
-	id := conf.Get(clientIdKey, "")
+	id := conf.Get(constants.ClientIdKey, "")
 	if id == "" {
-		return nil, fmt.Errorf("client id value is empty, set it: %s", clientIdKey)
+		return nil, fmt.Errorf("client id value is empty, set it: %s", constants.ClientIdKey)
 	}
 
-	secret := conf.Get(clientSecretKey, "")
+	secret := conf.Get(constants.ClientSecretKey, "")
 	if secret == "" {
-		return nil, fmt.Errorf("client secret value is empty, set it: %s", clientSecretKey)
+		return nil, fmt.Errorf("client secret value is empty, set it: %s", constants.ClientSecretKey)
 	}
 
 	ctx, _ := context.WithTimeout(context.TODO(), 30*time.Second)
@@ -108,7 +111,7 @@ func getOAuthConfig(conf fig.Properties) (*oauth2.Config, error) {
 		return nil, fmt.Errorf("failed to query provider %q: %v", issuer, err)
 	}
 
-	url, err := config.RedirectUrl(conf)
+	url, err := constants.RedirectUrl(conf)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query redirect url %s: %v", url, err)
 	}

@@ -49,7 +49,7 @@ func NewCasbinConfig() *CasbinConfig {
 	return &CasbinConfig{}
 }
 
-func (c *CasbinConfig) Init(conf fig.Properties, container bean.Container) error {
+func (c *CasbinConfig) Init(conf fig.Properties, container bean.Container) (*casbin.Enforcer, error) {
 	var m model.Model
 	var err error
 	modelFile := conf.Get(casbinModelKey, "")
@@ -60,21 +60,21 @@ func (c *CasbinConfig) Init(conf fig.Properties, container bean.Container) error
 	}
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	t := conf.Get(casbinAdapterTypeKey, "")
 	v := conf.Get(casbinAdapterValueKey, "")
 	if t == "" || v == "" {
-		return fmt.Errorf("casbin adapter type: %s value: %s . ", t, v)
+		return nil, fmt.Errorf("casbin adapter type: %s value: %s . ", t, v)
 	}
 	adapter, err := selectAdapter(t, v)
 	enforcer, err := casbin.NewEnforcer(m, adapter)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return container.Register(enforcer)
+	return enforcer, nil
 }
 
 func selectAdapter(t, v string) (persist.Adapter, error) {

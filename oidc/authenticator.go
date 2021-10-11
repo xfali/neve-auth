@@ -18,18 +18,15 @@ import (
 )
 
 type oidcAuthenticator struct {
-	oidcCtx  *OidcContext
 	verifier token.Verifier
 	scopes   []string
 }
 
-func CreateAuthenticator(oidcCtx *OidcContext) (*oidcAuthenticator, error) {
+func NewAuthenticator(verifier token.Verifier) *oidcAuthenticator {
 	ret := &oidcAuthenticator{
-		oidcCtx: oidcCtx,
+		verifier: verifier,
 	}
-
-	ret.verifier = oidcCtx.GetVerifier(context.Background())
-	return ret, nil
+	return ret
 }
 
 func (a *oidcAuthenticator) AuthenticateToken(ctx context.Context, token string) (*user.UserInfo, error) {
@@ -57,13 +54,13 @@ func (a *oidcAuthenticator) AuthenticateToken(ctx context.Context, token string)
 }
 
 func (a *oidcAuthenticator) VerifyIssuer(token string) error {
-	issuer, err := parseIssuer(token)
-	if err != nil {
-		return err
-	}
-	if issuer != a.oidcCtx.IssuerURL {
-		return errcode.IssuerVerifyError
-	}
+	//issuer, err := parseIssuer(token)
+	//if err != nil {
+	//	return err
+	//}
+	//if issuer != a.oidcCtx.IssuerURL {
+	//	return errcode.IssuerVerifyError
+	//}
 	return nil
 }
 

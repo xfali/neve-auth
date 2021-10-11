@@ -7,15 +7,9 @@ package authorizer
 
 import (
 	"context"
-	"github.com/xfali/neve-auth/user"
+	"github.com/xfali/neve-auth/attribute"
 )
 
-type Attribute interface {
-	GetUserInfo() *user.UserInfo
-	GetAction() string
-	GetResource() string
-}
-
 type Authorizer interface {
-	Authorize(ctx context.Context, attr Attribute) Result
+	Authorize(ctx context.Context, attr attribute.Attribute) Result
 }
