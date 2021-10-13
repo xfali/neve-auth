@@ -8,6 +8,7 @@ package test
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/xfali/neve-auth"
+	"github.com/xfali/neve-auth/filter"
 	"github.com/xfali/neve-core"
 	"github.com/xfali/neve-core/processor"
 	"github.com/xfali/neve-utils/neverror"
@@ -21,10 +22,11 @@ import (
 type webBean struct {
 	V          string //`fig:"Log.Level"`
 	HttpLogger loghttp.HttpLogger `inject:""`
+	filter.PermissionHandlerHolder
 }
 
 func (b *webBean) HttpRoutes(engine gin.IRouter) {
-	engine.GET("test", b.HttpLogger.LogHttp(), neveauth.Gin.RequirePermission("user", "read"), func(context *gin.Context) {
+	engine.GET("test", b.HttpLogger.LogHttp(), b.RequirePermission("userinfo", "read"), func(context *gin.Context) {
 		context.JSON(http.StatusOK, result.Ok(b.V))
 	})
 }

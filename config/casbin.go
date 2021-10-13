@@ -36,7 +36,7 @@ p = sub, dom, obj, act
 g = _,_,_
 
 [matchers]
-m = g(r.sub, p.sub, r.dom) && r.dom == p.dom && r.obj == p.obj && r.act == p.obj
+m = g(r.sub, p.sub, r.dom) && r.dom == p.dom && r.obj == p.obj && r.act == p.act
 
 [policy_effect]
 e = some(where (p.eft == allow))

@@ -12,15 +12,15 @@ import (
 	"github.com/xfali/xlog"
 )
 
-type AuthorizeFilter struct {
+type GinAuthorizeFilter struct {
 	logger     xlog.Logger
 	attrParser AttributeParser
 	authorizer authorizer.Authorizer
 	fail       FailHandler
 }
 
-func NewAuthorizeFilter(attrParser AttributeParser, authorizer authorizer.Authorizer, fail FailHandler) *AuthorizeFilter {
-	ret := &AuthorizeFilter{
+func NewGinAuthorizeFilter(attrParser AttributeParser, authorizer authorizer.Authorizer, fail FailHandler) *GinAuthorizeFilter {
+	ret := &GinAuthorizeFilter{
 		logger:     xlog.GetLogger(),
 		attrParser: attrParser,
 		authorizer: authorizer,
@@ -29,7 +29,7 @@ func NewAuthorizeFilter(attrParser AttributeParser, authorizer authorizer.Author
 	return ret
 }
 
-func (f *AuthorizeFilter) FilterHandler(ctx *gin.Context) {
+func (f *GinAuthorizeFilter) Authorize(ctx *gin.Context) {
 	if isIgnoreAuth(ctx) {
 		ctx.Next()
 		return

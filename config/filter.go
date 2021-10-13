@@ -34,12 +34,13 @@ func (c *FilterConfig) Init(ctx *oidc2.OidcContext, redirectHandler auth.Redirec
 		return err
 	}
 
-	af := filter.NewAuthorizeFilter(h, authorizer.NewAuthorizer(enforcer), filter.NewUnauthHandler())
-	err = container.Register(af)
+	af := filter.NewGinAuthorizeFilter(h, authorizer.NewAuthorizer(enforcer), filter.NewUnauthHandler())
+	ph := filter.NewPermissionHandler(af)
+
+	err = container.RegisterByName(filter.PermissionHandlerName, ph)
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
