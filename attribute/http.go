@@ -8,33 +8,43 @@ package attribute
 import (
 	"context"
 	"fmt"
-	"github.com/xfali/neve-auth/constants"
 	"github.com/xfali/neve-auth/user"
 	"net/http"
 )
 
 type userKey struct{}
+var ctxUserKey userKey
 
-var reqUserKey userKey
+type reqInfoKey struct{}
+var ctxReqInfoKeyKey reqInfoKey
+
+type RequestInfo struct {
+	Resource string
+	Action   string
+}
 
 func WithUser(req *http.Request, userInfo *user.UserInfo) *http.Request {
-	return req.WithContext(context.WithValue(req.Context(), reqUserKey, userInfo))
+	return req.WithContext(context.WithValue(req.Context(), ctxUserKey, userInfo))
 }
 
 func GetUser(req *http.Request) (*user.UserInfo, bool) {
-	v := req.Context().Value(reqUserKey)
+	v := req.Context().Value(ctxUserKey)
 	if v != nil {
 		return v.(*user.UserInfo), true
 	}
 	return nil, false
 }
 
-func GetResource(req *http.Request) string {
-	return req.Header.Get(constants.HeaderKeyResource)
+func WithRequestInfo(req *http.Request, info *RequestInfo) *http.Request {
+	return req.WithContext(context.WithValue(req.Context(), ctxReqInfoKeyKey, info))
 }
 
-func GetAction(req *http.Request) string {
-	return req.Header.Get(constants.HeaderKeyAction)
+func GetRequestInfo(req *http.Request) (*RequestInfo, bool) {
+	v := req.Context().Value(ctxReqInfoKeyKey)
+	if v != nil {
+		return v.(*RequestInfo), true
+	}
+	return nil, false
 }
 
 func ParseAttribute(req *http.Request) (Attribute, bool, error) {
@@ -43,8 +53,13 @@ func ParseAttribute(req *http.Request) (Attribute, bool, error) {
 		return nil, true, fmt.Errorf("cannot get user info")
 	}
 
-	res := GetResource(req)
-	act := GetAction(req)
+	info, ok := GetRequestInfo(req)
+	if !ok {
+		return nil, true, fmt.Errorf("cannot get request info")
+	}
+
+	res := info.Resource
+	act := info.Action
 
 	return &DefaultAttribute{
 		User:     user,

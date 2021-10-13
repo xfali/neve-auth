@@ -27,8 +27,8 @@ func (c *FilterConfig) Init(ctx *oidc2.OidcContext, redirectHandler auth.Redirec
 	verifier := ctx.GetVerifier(context.TODO())
 	matcher := filter.NewPathMatcher(conf)
 	ignoreDexPaths(conf, matcher)
-	h := filter.NewDefaultHandler(matcher, redirectHandler, auth.NewTokenReader(), oidc2.NewAuthenticator(verifier))
-	tf := filter.NewTokenFilter(h, h)
+	h := filter.NewDefaultHandler(matcher, redirectHandler, auth.NewTokenReader())
+	tf := filter.NewTokenFilter(h, oidc2.NewAuthenticator(verifier), h)
 	err := container.Register(tf)
 	if err != nil {
 		return err

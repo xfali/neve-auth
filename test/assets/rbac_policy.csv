@@ -1,7 +1,7 @@
-p,admin,userinfo, read
-p,admin,userinfo, write
-p,org,userinfo, read
-p,user,userinfo, none
-g,admin,admin,
-g,org,org,
-g,user,user,
+p,admin,tenant1,userinfo, read
+p,admin,tenant1,userinfo, write
+p,org,tenant1,userinfo, read
+p,user,tenant1,userinfo, none
+g,admin,admin,tenant1
+g,org,org,tenant1
+g,user,user,tenant1

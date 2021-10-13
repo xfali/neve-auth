@@ -42,6 +42,7 @@ func (f *AuthorizeFilter) FilterHandler(ctx *gin.Context) {
 			if attr != nil {
 				ret := f.authorizer.Authorize(ctx.Request.Context(), attr)
 				if ret.Decision().IsDeny() {
+					f.logger.Warnf("authorize: deny, err : %v\n", ret.Error())
 					f.fail.OnFailed(errcode.DenyError, ctx.Writer, ctx.Request)
 					ctx.Abort()
 				} else {

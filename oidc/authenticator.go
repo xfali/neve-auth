@@ -50,7 +50,10 @@ func (a *oidcAuthenticator) AuthenticateToken(ctx context.Context, token string)
 		return nil, errcode.IndentingIdTokenClaimsError.V(err)
 	}
 
-	return &user.UserInfo{}, nil
+	return &user.UserInfo{
+		Username: "admin",
+		ProjectID: "tenant1",
+	}, nil
 }
 
 func (a *oidcAuthenticator) VerifyIssuer(token string) error {
