@@ -1,7 +1,18 @@
-// Copyright (C) 2019-2021, Xiongfa Li.
-// @author xiongfa.li
-// @version V1.0
-// Description:
+/*
+ * Copyright (C) 2019-2024, Xiongfa Li.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package auth
 
@@ -90,13 +101,13 @@ func (m *OidcLoginMgr) Callback(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, errMsg+": "+r.FormValue("error_description"), http.StatusBadRequest)
 		return
 	}
-	code :=  r.FormValue("code")
+	code := r.FormValue("code")
 	if code == "" {
 		m.logger.Errorf("no code in request: %q", r.RequestURI)
 		http.Error(w, fmt.Sprintf("no code in request: %q", r.Form), http.StatusBadRequest)
 		return
 	}
-	if state =  r.FormValue("state"); state == "" {
+	if state = r.FormValue("state"); state == "" {
 		m.logger.Errorf("no state in request: %q", r.RequestURI)
 		http.Error(w, fmt.Sprintf("expected state %q", r.RequestURI), http.StatusBadRequest)
 		return

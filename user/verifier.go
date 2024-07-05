@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2024, Xiongfa Li.
+ * Copyright (C) 2024, Xiongfa Li.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,25 +14,10 @@
  * limitations under the License.
  */
 
-package attribute
+package user
 
-import "github.com/xfali/neve-auth/user"
+import "context"
 
-type DefaultAttribute struct {
-	User     *user.UserInfo
-	Resource string
-	Action   string
-	Tenant   string
-}
-
-func (a *DefaultAttribute) GetUserInfo() *user.UserInfo {
-	return a.User
-}
-
-func (a *DefaultAttribute) GetAction() string {
-	return a.Action
-}
-
-func (a *DefaultAttribute) GetResource() string {
-	return a.Resource
+type UserPasswordVerifier interface {
+	QueryPassword(ctx context.Context, username string) (string, error)
 }
